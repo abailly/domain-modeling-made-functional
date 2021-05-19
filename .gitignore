@@ -1,0 +1,10 @@
+*~
+\#*
+.stack-work/
+TAGS
+/ui/dist/
+/.stack-work-build/
+*.hie
+.idea
+*.iml
+*.code-workspace
