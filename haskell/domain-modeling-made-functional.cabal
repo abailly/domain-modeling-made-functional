@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 41631baaec633b0b48802114b9f781bffad759d832abecda63baf24117bf2d56
+-- hash: 047e5e71bef596e79c67a7298be685c7033d2747186b5273dfe59d3df93d9541
 
 name:           domain-modeling-made-functional
 version:        0.1.0.0
@@ -28,12 +28,15 @@ source-repository head
 library
   exposed-modules:
       Lib
+      OrderTaking.Domain
   other-modules:
       Paths_domain_modeling_made_functional
   hs-source-dirs:
       src
   build-depends:
       base >=4.7 && <5
+    , basement
+    , text
   default-language: Haskell2010
 
 executable domain-modeling-made-functional-exe
@@ -45,7 +48,9 @@ executable domain-modeling-made-functional-exe
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , basement
     , domain-modeling-made-functional
+    , text
   default-language: Haskell2010
 
 test-suite domain-modeling-made-functional-test
@@ -58,5 +63,7 @@ test-suite domain-modeling-made-functional-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , basement
     , domain-modeling-made-functional
+    , text
   default-language: Haskell2010
