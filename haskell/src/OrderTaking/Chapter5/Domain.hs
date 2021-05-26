@@ -87,9 +87,9 @@ newtype CustomerId = CustomerId Void
 
 newtype CustomerInfo = CustomerInfo Void
 
-newtype ShippingAddress = ShippingAddress Void
+newtype Address = Address Void
 
-newtype BillingAddress = BillingAddress Void
+newtype EmailAddress = EmailAddress Void
 
 newtype Price = Price Void
 
@@ -98,8 +98,8 @@ newtype BillingAmount = BillingAmount Void
 data Order = Order
   { id :: OrderId,
     customerId :: CustomerId,
-    shippingAddress :: ShippingAddress,
-    billingAddress :: BillingAddress,
+    shippingAddress :: Address,
+    billingAddress :: Address,
     orderLines :: [OrderLine],
     amountToBill :: BillingAmount
   }
@@ -119,7 +119,7 @@ data OrderLine = OrderLine
 data UnvalidatedOrder = UnvalidatedOrder
   { orderId :: OrderId,
     customerInfo :: CustomerInfo,
-    shippingAddress :: ShippingAddress
+    shippingAddress :: Address
   }
 
 data PlaceOrderEvents = PlaceOrderEvents

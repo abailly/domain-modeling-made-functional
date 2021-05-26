@@ -37,6 +37,7 @@ library
     , basement
     , parsec
     , text
+    , time
   default-language: Haskell2010
 
 executable domain-modeling-made-functional-exe
