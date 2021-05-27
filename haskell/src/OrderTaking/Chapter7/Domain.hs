@@ -3,13 +3,22 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module OrderTaking.Chapter7.Domain where
 
+import Data.Set (Set)
 import Data.Text (Text)
 import Data.Time (UTCTime)
 import Data.Void (Void)
-import OrderTaking.Chapter5.Domain hiding (BillableOrderPlaced, Order (..), OrderLine (..), OrderPlaced, UnvalidatedOrder)
+import GHC.Base (Type)
+import OrderTaking.Chapter5.Domain hiding
+  ( BillableOrderPlaced,
+    Order (..),
+    OrderLine (..),
+    OrderPlaced,
+    UnvalidatedOrder,
+  )
 
 data Command a = Command
   { command :: a,
@@ -37,13 +46,19 @@ newtype HasState (state :: k) a = HasState a
 -- status using a concrete "witness" of the type, eg. a concrete value with a
 -- specific constructor.
 data Order (status :: OrderState) where
-  OrderUnvalidated :: RawOrder Unvalidated -> Order Unvalidated
-  OrderValidated :: RawOrder Validated -> Order Validated
+  OrderUnvalidated :: UnpricedOrder Unvalidated -> Order Unvalidated
+  OrderValidated :: UnpricedOrder Validated -> Order Validated
   OrderPriced :: PricedOrder -> Order Priced
 
--- | A validated order is just the same as an unvalidated one, so better track this Validation
+type family IsValid (f :: OrderState -> Type) where
+  IsValid (f Unvalidated) = False
+  IsValid (f _) = True
+
+-- | Basic structure of an unpriced order.
+-- A validated order is just the same as an unvalidated one, so better track this Validation
 -- process at the type-level using a phantom type.
-data RawOrder valid = RawOrder
+-- `UnpricedOrder` is not a word from the domain though.
+data UnpricedOrder valid = UnpricedOrder
   { id :: OrderId,
     -- | we wrap the `CustomerInfo` and other fields into a newtype so the underlying representation
     -- stays the same but we can track the validation status of the object
@@ -83,11 +98,17 @@ data PricedOrderLine = PricedOrderLine
 -- will be pure functions anymore and we need to express the fact they will need some side-effects,
 -- talking to a DB or to a remote service.
 -- That's what the `effect` parameter models, we leave it unspecified for now.
-type ValidateOrder effect = Order Unvalidated -> CheckProductCodeExists effect -> CheckAddressExists effect -> effect (Either ValidationError (Order Validated))
+type ValidateOrder effect =
+  Order Unvalidated ->
+  CheckProductCodeExists effect ->
+  CheckAddressExists effect ->
+  effect (Either ValidationError (Order Validated))
 
 type CheckProductCodeExists effect = ProductCode -> effect Bool
 
-type CheckAddressExists effect = HasState Unvalidated Address -> effect (Either AddressValidationError (HasState Validated Address))
+type CheckAddressExists effect =
+  HasState Unvalidated Address ->
+  effect (Either AddressValidationError (HasState Validated Address))
 
 type AddressValidationError = Void
 
@@ -115,7 +136,11 @@ type SendOrderAcknowledgment effect = OrderAcknowledgment -> effect SendResult
 
 data SendResult = Sent | NotSent
 
-type AcknowledgeOrder effect = CreateOrderAcknowledgmentLetter -> SendOrderAcknowledgment effect -> Order Priced -> Maybe OrderAcknowledgmentSent
+type AcknowledgeOrder effect =
+  CreateOrderAcknowledgmentLetter ->
+  SendOrderAcknowledgment effect ->
+  Order Priced ->
+  Maybe OrderAcknowledgmentSent
 
 -- * Events
 
@@ -142,4 +167,7 @@ type CreateEvents = Order Priced -> [PlaceOrderEvent]
 -- | The type of `PlaceOrder` workflow.
 -- In Haskell, the `Result` type is traditionally `Either` and the "error" is on the `Left`
 -- side with the result on the `Right` side.
-type PlaceOrderWorkflow effect = Command (Order Unvalidated) -> effect (Either PlaceOrderError [PlaceOrderEvent])
+-- Does it really make sense to return a list of `PlaceOrderEvent` here? Will there ever be
+-- more than one event of each type?
+type PlaceOrderWorkflow effect =
+  Command (Order Unvalidated) -> effect (Either PlaceOrderError (Set PlaceOrderEvent))
